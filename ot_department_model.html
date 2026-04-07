@@ -1,0 +1,673 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>OT Department P&L Model</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f7f6f3;
+    --surface: #ffffff;
+    --surface-2: #f0efe9;
+    --border: rgba(0,0,0,0.09);
+    --border-strong: rgba(0,0,0,0.15);
+    --text: #1a1917;
+    --text-2: #6b6a65;
+    --text-3: #a09f99;
+    --green: #1a7a52;
+    --green-bg: #edf7f2;
+    --red: #b93030;
+    --red-bg: #fdf0f0;
+    --blue: #1a4f8a;
+    --blue-bg: #eef4fb;
+    --amber: #8a5a10;
+    --amber-bg: #fdf5e6;
+    --purple: #4a3aaa;
+    --purple-bg: #f0eefb;
+    --accent: #2563a8;
+    --radius: 10px;
+    --radius-lg: 14px;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    font-family: 'DM Sans', sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    font-size: 14px;
+    line-height: 1.6;
+    min-height: 100vh;
+  }
+
+  header {
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 20px 32px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    position: sticky;
+    top: 0;
+    z-index: 10;
+  }
+
+  header .logo {
+    font-size: 15px;
+    font-weight: 600;
+    letter-spacing: -0.3px;
+    color: var(--text);
+  }
+
+  header .logo span {
+    color: var(--accent);
+  }
+
+  header .sub {
+    font-size: 12px;
+    color: var(--text-3);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .main { max-width: 1100px; margin: 0 auto; padding: 28px 24px 60px; }
+
+  .section-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.1em;
+    color: var(--text-3);
+    margin: 28px 0 10px;
+  }
+
+  .card {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+    margin-bottom: 10px;
+  }
+
+  .ot-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    cursor: pointer;
+    padding-bottom: 14px;
+    margin-bottom: 14px;
+    border-bottom: 1px solid var(--border);
+    user-select: none;
+  }
+
+  .ot-header:hover .ot-title { color: var(--accent); }
+
+  .ot-title {
+    font-size: 14px;
+    font-weight: 600;
+    transition: color 0.15s;
+  }
+
+  .ot-summary {
+    font-size: 11px;
+    color: var(--text-3);
+    font-family: 'DM Mono', monospace;
+    margin-right: 10px;
+  }
+
+  .chevron {
+    font-size: 10px;
+    color: var(--text-3);
+    transition: transform 0.2s;
+    flex-shrink: 0;
+  }
+  .chevron.open { transform: rotate(180deg); }
+
+  .row {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+    margin-bottom: 14px;
+  }
+  .row:last-child { margin-bottom: 0; }
+
+  .row label {
+    font-size: 13px;
+    color: var(--text-2);
+    min-width: 215px;
+    flex-shrink: 0;
+  }
+
+  .row label small {
+    font-size: 11px;
+    color: var(--text-3);
+    display: block;
+  }
+
+  input[type=range] {
+    flex: 1;
+    -webkit-appearance: none;
+    height: 4px;
+    background: var(--border-strong);
+    border-radius: 2px;
+    outline: none;
+  }
+
+  input[type=range]::-webkit-slider-thumb {
+    -webkit-appearance: none;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+
+  input[type=range]::-moz-range-thumb {
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: var(--accent);
+    cursor: pointer;
+    border: 2px solid white;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.2);
+  }
+
+  .readout {
+    font-size: 13px;
+    font-weight: 600;
+    min-width: 90px;
+    text-align: right;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+  }
+
+  .bonus-section {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  .toggle-row {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 10px;
+  }
+  .toggle-row:last-child { margin-bottom: 0; }
+  .toggle-row label { font-size: 13px; color: var(--text-2); cursor: pointer; }
+
+  .toggle {
+    width: 36px;
+    height: 20px;
+    border-radius: 10px;
+    background: var(--border-strong);
+    position: relative;
+    cursor: pointer;
+    transition: background 0.2s;
+    flex-shrink: 0;
+    border: none;
+  }
+  .toggle.on { background: var(--green); }
+  .toggle::after {
+    content: '';
+    position: absolute;
+    width: 14px;
+    height: 14px;
+    border-radius: 50%;
+    background: white;
+    top: 3px;
+    left: 3px;
+    transition: left 0.2s;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.2);
+  }
+  .toggle.on::after { left: 19px; }
+
+  .cota-block {
+    margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+    background: var(--surface-2);
+    margin-left: -22px;
+    margin-right: -22px;
+    padding-left: 22px;
+    padding-right: 22px;
+    padding-bottom: 4px;
+  }
+
+  .cota-block-label {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-3);
+    margin-bottom: 10px;
+  }
+
+  .metric-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 10px;
+  }
+
+  .metric {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius);
+    padding: 14px 16px;
+  }
+
+  .metric .m-label {
+    font-size: 11px;
+    color: var(--text-3);
+    margin-bottom: 4px;
+    font-weight: 500;
+  }
+
+  .metric .m-val {
+    font-size: 20px;
+    font-weight: 600;
+    color: var(--text);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: -0.5px;
+  }
+
+  .metric .m-val.green { color: var(--green); }
+  .metric .m-val.red { color: var(--red); }
+  .metric .m-val.blue { color: var(--blue); }
+  .metric .m-val.amber { color: var(--amber); }
+  .metric .m-val.purple { color: var(--purple); }
+
+  .two-col {
+    display: grid;
+    grid-template-columns: minmax(0,1fr) minmax(0,1fr);
+    gap: 12px;
+  }
+
+  .panel {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: var(--radius-lg);
+    padding: 20px 22px;
+  }
+
+  .panel-title {
+    font-size: 13px;
+    font-weight: 600;
+    margin-bottom: 14px;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--border);
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .panel-title .dot {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+  }
+
+  .p-line {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-bottom: 7px;
+  }
+
+  .p-line .p-lbl { font-size: 12px; color: var(--text-2); }
+  .p-line .p-amt {
+    font-size: 12px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+    color: var(--text);
+  }
+  .p-line .p-amt.green { color: var(--green); }
+  .p-line .p-amt.muted { color: var(--text-3); }
+
+  .p-subhead {
+    font-size: 10px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: var(--text-3);
+    margin: 12px 0 6px;
+  }
+
+  .p-divider {
+    border: none;
+    border-top: 1px solid var(--border);
+    margin: 10px 0;
+  }
+
+  .p-subtotal {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding: 8px 0;
+    border-top: 1px solid var(--border);
+    margin-top: 8px;
+  }
+
+  .p-subtotal .p-lbl { font-size: 13px; font-weight: 600; }
+  .p-subtotal .p-amt {
+    font-size: 14px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .p-total {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    margin-top: 12px;
+    padding-top: 10px;
+    border-top: 2px solid var(--border-strong);
+  }
+
+  .p-total .p-lbl { font-size: 14px; font-weight: 600; }
+  .p-total .p-amt {
+    font-size: 16px;
+    font-weight: 600;
+    font-family: 'DM Mono', monospace;
+  }
+
+  .hint { font-size: 11px; color: var(--text-3); margin-left: 4px; font-weight: 400; }
+
+  footer {
+    font-size: 11px;
+    color: var(--text-3);
+    line-height: 1.7;
+    margin-top: 28px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border);
+  }
+
+  @media (max-width: 700px) {
+    .two-col { grid-template-columns: 1fr; }
+    .row label { min-width: 160px; }
+    header { flex-direction: column; align-items: flex-start; gap: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="logo">OT Department <span>P&L Model</span></div>
+  <div class="sub">Medicaid/SoonerCare · 97530 · Oklahoma</div>
+</header>
+
+<div class="main">
+
+  <div class="section-label">Department Setup</div>
+  <div class="card">
+    <div class="row" style="margin-bottom:0;">
+      <label>Number of OTs</label>
+      <input type="range" id="ot-count" min="1" max="4" step="1" value="1">
+      <span class="readout" id="ot-count-out">1 OT</span>
+    </div>
+  </div>
+
+  <div class="section-label">OT Configurations</div>
+  <div id="ot-panels"></div>
+
+  <div class="section-label">Department Summary</div>
+  <div class="metric-grid" id="metrics"></div>
+
+  <div class="section-label">Revenue vs. Expenses</div>
+  <div class="two-col">
+    <div class="panel">
+      <div class="panel-title"><span class="dot" style="background:var(--green);"></span>Revenue</div>
+      <div id="rev-lines"></div>
+    </div>
+    <div class="panel">
+      <div class="panel-title"><span class="dot" style="background:var(--red);"></span>Expenses</div>
+      <div id="exp-lines"></div>
+    </div>
+  </div>
+
+  <footer id="footnote"></footer>
+</div>
+
+<script>
+const COTA_SAL = 57540;
+const COTA_BONUS_MO = 1000;
+const RATE = 121.20;
+const BILL_WEEKS = 49;
+const ADMIN_PER_EMP_MO = 606.42;
+const RENT_PER_OT = 7275;
+const EMR_MO = 52;
+const PR_TAX = 0.0765;
+
+const otState = [
+  { base: 70000, hrs: 30, cotas: 1, cotaHrs: [30,30,30,30], sat: true, notes: true, retain: false, open: true },
+  { base: 70000, hrs: 30, cotas: 0, cotaHrs: [30,30,30,30], sat: true, notes: true, retain: false, open: true },
+  { base: 70000, hrs: 30, cotas: 0, cotaHrs: [30,30,30,30], sat: true, notes: true, retain: false, open: true },
+  { base: 70000, hrs: 30, cotas: 0, cotaHrs: [30,30,30,30], sat: true, notes: true, retain: false, open: true },
+];
+let numOTs = 1;
+
+function calcOT(o) {
+  const supCredit = Math.min(o.cotas * 2, 4);
+  const overageHrs = Math.max(0, (o.hrs + supCredit) - 27);
+  const overageBonus = overageHrs * 40 * 52;
+  const cotaSupBonus = o.cotas * COTA_BONUS_MO * 12;
+  const satBonus = o.sat ? 1000 : 0;
+  const notesBonus = o.notes ? 1000 : 0;
+  const retainBonus = o.retain ? Math.round(o.base * 0.03) : 0;
+  const totalComp = o.base + overageBonus + cotaSupBonus + satBonus + notesBonus + retainBonus;
+  const otRevenue = o.hrs * RATE * BILL_WEEKS;
+  let cotaRevenue = 0;
+  for (let i = 0; i < o.cotas; i++) cotaRevenue += o.cotaHrs[i] * RATE * BILL_WEEKS;
+  const cotaSalTotal = o.cotas * COTA_SAL;
+  return { supCredit, overageHrs, overageBonus, cotaSupBonus, satBonus, notesBonus, retainBonus, totalComp, otRevenue, cotaRevenue, cotaSalTotal };
+}
+
+function calcDept() {
+  let totalRevenue = 0, totalLaborOT = 0, totalLaborCOTA = 0, totalEmps = 0, totalWages = 0;
+  const otCalcs = [];
+  for (let i = 0; i < numOTs; i++) {
+    const c = calcOT(otState[i]);
+    otCalcs.push(c);
+    totalRevenue += c.otRevenue + c.cotaRevenue;
+    totalLaborOT += c.totalComp;
+    totalLaborCOTA += c.cotaSalTotal;
+    totalEmps += 1 + otState[i].cotas;
+    totalWages += c.totalComp + c.cotaSalTotal;
+  }
+  const directLabor = totalLaborOT + totalLaborCOTA;
+  const grossProfit = totalRevenue - directLabor;
+  const grossMargin = totalRevenue > 0 ? grossProfit / totalRevenue * 100 : 0;
+  const payrollTax = totalWages * PR_TAX;
+  const adminCost = totalEmps * ADMIN_PER_EMP_MO * 12;
+  const emrCost = totalEmps * EMR_MO * 12;
+  const rentTotal = numOTs * RENT_PER_OT;
+  const overhead = payrollTax + adminCost + emrCost + rentTotal;
+  const totalExpenses = directLabor + overhead;
+  const netIncome = totalRevenue - totalExpenses;
+  const netMargin = totalRevenue > 0 ? netIncome / totalRevenue * 100 : 0;
+  return { otCalcs, totalRevenue, directLabor, grossProfit, grossMargin, payrollTax, adminCost, emrCost, rentTotal, overhead, totalExpenses, netIncome, netMargin, totalEmps };
+}
+
+function fmt(n) { return '$' + Math.round(n).toLocaleString(); }
+function fmtPct(n) { return n.toFixed(1) + '%'; }
+
+function buildOTPanels() {
+  const container = document.getElementById('ot-panels');
+  let html = '';
+  for (let i = 0; i < numOTs; i++) {
+    const o = otState[i];
+    html += `
+    <div class="card" id="ot-panel-${i}" style="padding:0; overflow:hidden;">
+      <div style="padding:18px 22px;">
+        <div class="ot-header" onclick="toggleOT(${i})">
+          <span class="ot-title">OT ${i+1}</span>
+          <div style="display:flex;align-items:center;gap:8px;">
+            <span class="ot-summary" id="ot-summary-${i}"></span>
+            <span class="chevron ${o.open ? 'open' : ''}" id="ot-chevron-${i}">▼</span>
+          </div>
+        </div>
+        <div id="ot-body-${i}" style="display:${o.open ? 'block' : 'none'};">
+          <div class="row">
+            <label>Base salary</label>
+            <input type="range" id="ot-base-${i}" min="55000" max="120000" step="1000" value="${o.base}" oninput="upOT(${i},'base',+this.value)">
+            <span class="readout" id="ot-base-out-${i}">${fmt(o.base)}</span>
+          </div>
+          <div class="row">
+            <label>Billable hours/week</label>
+            <input type="range" id="ot-hrs-${i}" min="0" max="38" step="1" value="${o.hrs}" oninput="upOT(${i},'hrs',+this.value)">
+            <span class="readout" id="ot-hrs-out-${i}">${o.hrs} hrs</span>
+          </div>
+          <div class="row" style="margin-bottom:0;">
+            <label>COTAs supervised <small>25+ hrs/wk assumed · $1,000/mo each</small></label>
+            <input type="range" id="ot-cotas-${i}" min="0" max="4" step="1" value="${o.cotas}" oninput="upCotas(${i},+this.value)">
+            <span class="readout" id="ot-cotas-out-${i}">${o.cotas === 1 ? '1 COTA' : o.cotas + ' COTAs'}</span>
+          </div>
+          <div id="ot-cota-block-${i}"></div>
+          <div class="bonus-section">
+            <div class="toggle-row">
+              <div class="toggle ${o.sat ? 'on' : ''}" id="tog-sat-${i}" onclick="togBonus(${i},'sat')"></div>
+              <label onclick="togBonus(${i},'sat')">Client satisfaction ≥ 4.2/5.0 → +$1,000/yr</label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle ${o.notes ? 'on' : ''}" id="tog-notes-${i}" onclick="togBonus(${i},'notes')"></div>
+              <label onclick="togBonus(${i},'notes')">Note completion ≥ 95% within 24 hrs → +$1,000/yr</label>
+            </div>
+            <div class="toggle-row">
+              <div class="toggle ${o.retain ? 'on' : ''}" id="tog-retain-${i}" onclick="togBonus(${i},'retain')"></div>
+              <label onclick="togBonus(${i},'retain')">Retention bonus yr 2+ (3% of base) → <span id="ot-retain-amt-${i}">${fmt(Math.round(o.base * 0.03))}</span>/yr</label>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }
+  container.innerHTML = html;
+  for (let i = 0; i < numOTs; i++) buildCotaBlock(i);
+  updateSummaries();
+}
+
+function buildCotaBlock(i) {
+  const o = otState[i];
+  const container = document.getElementById('ot-cota-block-' + i);
+  if (!container) return;
+  if (o.cotas === 0) { container.innerHTML = ''; return; }
+  let html = '<div class="cota-block"><div class="cota-block-label">COTA Billable Hours</div>';
+  for (let j = 0; j < o.cotas; j++) {
+    html += `<div class="row" style="${j < o.cotas-1 ? 'margin-bottom:10px;' : 'margin-bottom:0;'}">
+      <label style="font-size:12px;">COTA ${j+1} billable hrs/week</label>
+      <input type="range" id="ot${i}-cota-hrs-${j}" min="0" max="38" step="1" value="${o.cotaHrs[j]}" oninput="upCotaHrs(${i},${j},+this.value)">
+      <span class="readout" id="ot${i}-cota-hrs-out-${j}" style="font-size:12px;">${o.cotaHrs[j]} hrs</span>
+    </div>`;
+  }
+  html += '</div>';
+  container.innerHTML = html;
+}
+
+function toggleOT(i) {
+  otState[i].open = !otState[i].open;
+  document.getElementById('ot-body-' + i).style.display = otState[i].open ? 'block' : 'none';
+  document.getElementById('ot-chevron-' + i).className = 'chevron ' + (otState[i].open ? 'open' : '');
+}
+
+function upOT(i, key, val) {
+  otState[i][key] = val;
+  if (key === 'base') {
+    document.getElementById('ot-base-out-' + i).textContent = fmt(val);
+    document.getElementById('ot-retain-amt-' + i).textContent = fmt(Math.round(val * 0.03));
+  }
+  if (key === 'hrs') document.getElementById('ot-hrs-out-' + i).textContent = val + ' hrs';
+  updateSummaries();
+  render();
+}
+
+function upCotas(i, val) {
+  otState[i].cotas = val;
+  document.getElementById('ot-cotas-out-' + i).textContent = val === 1 ? '1 COTA' : val + ' COTAs';
+  buildCotaBlock(i);
+  updateSummaries();
+  render();
+}
+
+function upCotaHrs(i, j, val) {
+  otState[i].cotaHrs[j] = val;
+  document.getElementById('ot' + i + '-cota-hrs-out-' + j).textContent = val + ' hrs';
+  render();
+}
+
+function togBonus(i, key) {
+  otState[i][key] = !otState[i][key];
+  document.getElementById('tog-' + key + '-' + i).classList.toggle('on', otState[i][key]);
+  render();
+}
+
+function updateSummaries() {
+  for (let i = 0; i < numOTs; i++) {
+    const o = otState[i];
+    const c = calcOT(o);
+    const el = document.getElementById('ot-summary-' + i);
+    if (el) el.textContent = fmt(o.base) + ' base · ' + o.hrs + ' hrs/wk · ' + o.cotas + ' COTA' + (o.cotas !== 1 ? 's' : '') + ' · ' + fmt(c.totalComp) + ' total comp';
+  }
+}
+
+function render() {
+  const d = calcDept();
+  updateSummaries();
+
+  const netColor = d.netIncome >= 0 ? 'green' : 'red';
+  const gpColor = d.grossProfit >= 0 ? 'purple' : 'red';
+
+  document.getElementById('metrics').innerHTML = `
+    <div class="metric"><div class="m-label">Total Revenue</div><div class="m-val blue">${fmt(d.totalRevenue)}</div></div>
+    <div class="metric"><div class="m-label">Gross Profit</div><div class="m-val ${gpColor}">${d.grossProfit < 0 ? '-' : ''}${fmt(Math.abs(d.grossProfit))} <span style="font-size:13px;font-weight:400;">(${fmtPct(d.grossMargin)})</span></div></div>
+    <div class="metric"><div class="m-label">Total Expenses</div><div class="m-val red">${fmt(d.totalExpenses)}</div></div>
+    <div class="metric"><div class="m-label">Net Income</div><div class="m-val ${netColor}">${d.netIncome < 0 ? '-' : ''}${fmt(Math.abs(d.netIncome))}</div></div>
+    <div class="metric"><div class="m-label">Net Margin</div><div class="m-val ${netColor}">${fmtPct(d.netMargin)}</div></div>
+    <div class="metric"><div class="m-label">Total Staff</div><div class="m-val">${d.totalEmps}</div></div>
+  `;
+
+  let revHtml = '';
+  for (let i = 0; i < numOTs; i++) {
+    const c = d.otCalcs[i];
+    revHtml += `<div class="p-subhead">OT ${i+1}</div>`;
+    revHtml += `<div class="p-line"><span class="p-lbl">OT billings (${otState[i].hrs} hrs/wk × 49 wks)</span><span class="p-amt green">${fmt(c.otRevenue)}</span></div>`;
+    for (let j = 0; j < otState[i].cotas; j++) {
+      const cotaRev = otState[i].cotaHrs[j] * RATE * BILL_WEEKS;
+      revHtml += `<div class="p-line"><span class="p-lbl">COTA ${j+1} billings (${otState[i].cotaHrs[j]} hrs/wk × 49 wks)</span><span class="p-amt green">${fmt(cotaRev)}</span></div>`;
+    }
+  }
+  revHtml += `<div class="p-total"><span class="p-lbl">Total Revenue</span><span class="p-amt" style="color:var(--blue);">${fmt(d.totalRevenue)}</span></div>`;
+  document.getElementById('rev-lines').innerHTML = revHtml;
+
+  let expHtml = '<div class="p-subhead">Direct Labor</div>';
+  for (let i = 0; i < numOTs; i++) {
+    const c = d.otCalcs[i];
+    expHtml += `<div class="p-line"><span class="p-lbl">OT ${i+1} total compensation</span><span class="p-amt">${fmt(c.totalComp)}</span></div>`;
+    if (otState[i].cotas > 0) expHtml += `<div class="p-line"><span class="p-lbl">OT ${i+1} COTA salaries (${otState[i].cotas} × $57,540)</span><span class="p-amt">${fmt(c.cotaSalTotal)}</span></div>`;
+  }
+  expHtml += `<div class="p-subtotal"><span class="p-lbl">Gross Profit</span><span class="p-amt" style="color:${d.grossProfit >= 0 ? 'var(--purple)' : 'var(--red)'};">${d.grossProfit < 0 ? '-' : ''}${fmt(Math.abs(d.grossProfit))} (${fmtPct(d.grossMargin)})</span></div>`;
+  expHtml += `<hr class="p-divider"><div class="p-subhead">Overhead</div>`;
+  expHtml += `<div class="p-line"><span class="p-lbl">Payroll taxes (7.65% on all wages)</span><span class="p-amt">${fmt(d.payrollTax)}</span></div>`;
+  expHtml += `<div class="p-line"><span class="p-lbl">Admin (${d.totalEmps} emp × $606.42/mo × 12)</span><span class="p-amt">${fmt(d.adminCost)}</span></div>`;
+  expHtml += `<div class="p-line"><span class="p-lbl">EMR (${d.totalEmps} users × $52/mo × 12)</span><span class="p-amt">${fmt(d.emrCost)}</span></div>`;
+  expHtml += `<div class="p-line"><span class="p-lbl">Rent (${numOTs} OT × $7,275/yr)</span><span class="p-amt">${fmt(d.rentTotal)}</span></div>`;
+  expHtml += `<div class="p-total"><span class="p-lbl">Net Income</span><span class="p-amt" style="color:${d.netIncome >= 0 ? 'var(--green)' : 'var(--red)'};">${d.netIncome < 0 ? '-' : ''}${fmt(Math.abs(d.netIncome))} (${fmtPct(d.netMargin)})</span></div>`;
+  document.getElementById('exp-lines').innerHTML = expHtml;
+
+  document.getElementById('footnote').innerHTML =
+    `Medicaid/SoonerCare &nbsp;·&nbsp; CPT 97530 Therapeutic Activities &nbsp;·&nbsp; $30.30/unit &nbsp;·&nbsp; 4 units/hr = $121.20/session &nbsp;·&nbsp; Revenue calculated on <strong>49 billable weeks</strong> (3 weeks PTO) &nbsp;·&nbsp; Salaries paid on 52 weeks regardless &nbsp;·&nbsp; COTA salary $57,540 fixed regardless of hours billed &nbsp;·&nbsp; Overage bonus: $40/hr above 27 credited hrs/wk (incl. supervision credit, capped at 4 hrs) &nbsp;·&nbsp; COTA supervision bonus: $1,000/mo per COTA averaging 25+ billable hrs/wk &nbsp;·&nbsp; Payroll taxes: 7.65% employer share (FICA) on all wages including bonuses &nbsp;·&nbsp; Admin: $606.42/employee/month &nbsp;·&nbsp; EMR: $52/user/month &nbsp;·&nbsp; Rent: $7,275/OT/year &nbsp;·&nbsp; Oklahoma market median for pediatric OT: $104,000`;
+}
+
+document.getElementById('ot-count').addEventListener('input', e => {
+  numOTs = +e.target.value;
+  document.getElementById('ot-count-out').textContent = numOTs + (numOTs === 1 ? ' OT' : ' OTs');
+  buildOTPanels();
+  render();
+});
+
+buildOTPanels();
+render();
+</script>
+</body>
+</html>
